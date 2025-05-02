@@ -1,0 +1,2 @@
+# maji-kayo-bar-pos
+MAJI KAYO BAR POS SYSTEM PROJECT
