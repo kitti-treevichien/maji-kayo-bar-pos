@@ -48,7 +48,7 @@ def init_db():
         
         # Create inventory table
         c.execute('''
-            CREATE TABLE inventory (
+            CREATE TABLE IF NOT EXISTS inventory (
                 id INTEGER PRIMARY KEY,
                 item_name TEXT NOT NULL,
                 quantity INTEGER NOT NULL,
@@ -57,25 +57,43 @@ def init_db():
             )
         ''')
 
-        # Create promotions table
+        # Create tables table
         c.execute('''
-            CREATE TABLE promotions (
+            CREATE TABLE IF NOT EXISTS tables (
+                id INTEGER PRIMARY KEY,
+                table_number INTEGER NOT NULL,
+                is_available INTEGER DEFAULT 1,
+                has_active_order INTEGER DEFAULT 0
+            )
+        ''')
+
+        # Create menu_items table
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS menu_items (
                 id INTEGER PRIMARY KEY,
                 name TEXT NOT NULL,
-                menu_item_id INTEGER NOT NULL,
-                discount INTEGER NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (menu_item_id) REFERENCES menu_items (id)
+                price REAL NOT NULL
+            )
+        ''')
+
+        # Create promotions table
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS promotions (
+                id INTEGER PRIMARY KEY,
+                name TEXT NOT NULL,
+                food_name TEXT NOT NULL,
+                discount_percentage INTEGER NOT NULL,
+                FOREIGN KEY (food_name) REFERENCES menu_items (name)
             )
         ''')
         
         # Create orders table
         c.execute('''
             CREATE TABLE IF NOT EXISTS orders (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id INTEGER PRIMARY KEY,
                 table_id INTEGER NOT NULL,
-                status TEXT NOT NULL DEFAULT 'pending',
-                total_amount DECIMAL(10,2) DEFAULT 0,
+                total_amount DECIMAL,
+                status TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (table_id) REFERENCES tables (id)
             )
@@ -84,21 +102,55 @@ def init_db():
         # Create order_items table
         c.execute('''
             CREATE TABLE IF NOT EXISTS order_items (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id INTEGER PRIMARY KEY,
                 order_id INTEGER NOT NULL,
                 menu_item_id INTEGER NOT NULL,
                 quantity INTEGER NOT NULL,
-                price DECIMAL(10,2) NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                price DECIMAL NOT NULL,
                 FOREIGN KEY (order_id) REFERENCES orders (id),
                 FOREIGN KEY (menu_item_id) REFERENCES menu_items (id)
+            )
+        ''')
+
+        # Create employees table
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS employees (
+                id INTEGER PRIMARY KEY,
+                first_name TEXT NOT NULL,
+                last_name TEXT NOT NULL,
+                position TEXT NOT NULL,
+                salary DECIMAL NOT NULL,
+                address TEXT NOT NULL,
+                phone TEXT NOT NULL,
+                email TEXT NOT NULL,
+                birth_date DATE NOT NULL,
+                nationality TEXT NOT NULL,
+                gender TEXT NOT NULL,
+                military_status TEXT,
+                education_level TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+
+        # Create store_goods table
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS store_goods (
+                id INTEGER PRIMARY KEY,
+                customer_name TEXT NOT NULL,
+                customer_phone TEXT NOT NULL,
+                item_name TEXT NOT NULL,
+                quantity INTEGER NOT NULL,
+                deposit_date DATE NOT NULL,
+                expiration_date DATE NOT NULL,
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
 
         # Create item_sales_records table
         c.execute('''
             CREATE TABLE IF NOT EXISTS item_sales_records (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id INTEGER PRIMARY KEY,
                 menu_item_id INTEGER NOT NULL,
                 quantity_sold INTEGER NOT NULL,
                 total_revenue REAL NOT NULL,
@@ -106,6 +158,19 @@ def init_db():
                 FOREIGN KEY (menu_item_id) REFERENCES menu_items (id)
             )
         ''')
+        
+        # Check if tables are already created
+        c.execute('SELECT COUNT(*) FROM tables')
+        count = c.fetchone()[0]
+        
+        # If no tables exist, create 9 tables
+        if count == 0:
+            for table_number in range(1, 10):
+                c.execute('''
+                    INSERT INTO tables (table_number, is_available, has_active_order)
+                    VALUES (?, 1, 0)
+                ''', (table_number,))
+            print("Created 9 physical tables")
         
         conn.commit()
         print("Database initialized successfully")
@@ -273,8 +338,15 @@ def get_tables():
     tables = conn.execute('SELECT * FROM tables').fetchall()
     return jsonify([dict(table) for table in tables])
 
-@app.route('/api/tables/<int:table_id>', methods=['PUT'])
+@app.route('/api/tables/<int:table_id>', methods=['GET', 'PUT'])
 def update_table_status(table_id):
+    if request.method == 'GET':
+        conn = get_db_connection()
+        table = conn.execute('SELECT * FROM tables WHERE id = ?', (table_id,)).fetchone()
+        if not table:
+            return jsonify({'error': 'Table not found'}), 404
+        return jsonify(dict(table))
+    
     try:
         conn = get_db_connection()
         data = request.get_json()
@@ -750,7 +822,7 @@ def handle_orders():
 
             # Update table status
             conn.execute('''
-                UPDATE tables SET is_available = 0 WHERE id = ?
+                UPDATE tables SET is_available = 0, has_active_order = 1 WHERE id = ?
             ''', (data['table_id'],))
 
             conn.commit()
