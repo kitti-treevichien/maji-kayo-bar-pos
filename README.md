@@ -1,10 +1,8 @@
-# Maji Kayo Bar Management System
-
-A complete restaurant management system built with Flask, handling orders, payments, promotions, and inventory management.
+# Maji Kayo Bar POS System
 
 ## Features
 Employee Registration
-Inventory Control
+Inventory Management
 Food Menu Management
 Table Management
 Promotion Management
@@ -37,9 +35,6 @@ Performance Reporting
 - `templates/` - HTML templates
 - `majikayobar.db` - SQLite database (includes sample data)
 - `requirements.txt` - Python package dependencies
-
-## Note
-This project was developed as part of my learning journey in web development and database management. It demonstrates practical implementation of restaurant management concepts using Flask and SQLite.
 
 ## Technologies Used
 - Flask (Web Framework)
