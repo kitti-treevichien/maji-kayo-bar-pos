@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>ชำระค่าบริการ - MAJI KAYO BAR</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: #1a1a1a;
+            color: white;
+            padding: 20px 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 0 20px 20px 20px;
+            border-bottom: 1px solid #333;
+            margin-bottom: 20px;
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-header p {
+            font-size: 0.9em;
+            color: #999;
+        }
+
+        .nav-section {
+            margin-bottom: 20px;
+        }
+
+        .nav-section h3 {
+            padding: 10px 20px;
+            color: #666;
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .nav-item {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            color: #fff;
+            text-decoration: none;
+            transition: background-color 0.3s;
+            cursor: pointer;
+        }
+
+        .nav-item:hover {
+            background-color: #333;
+        }
+
+        .nav-item.active {
+            background-color: #333;
+            border-left: 4px solid #ff4444;
+        }
+
+        .admin-only {
+            color: #ff4444;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            flex: 1;
+            padding: 20px;
+        }
+
+        .content-header {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .content-header h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .content-body {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .payment-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .table-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .table-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .table-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .table-item.available {
+            background: #e8f5e9;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .table-item.occupied {
+            background: #ffebee;
+            cursor: pointer;
+        }
+
+        .table-item.selected {
+            border-color: #1a1a1a;
+            background: #1a1a1a;
+            color: white;
+        }
+
+        .payment-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .order-details {
+            margin: 20px 0;
+        }
+
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .promotion-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #fff;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+
+        .promotion-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .promotion-item:hover {
+            background: #f0f0f0;
+        }
+
+        .promotion-item.selected {
+            background: #e8f5e9;
+        }
+
+        .payment-methods {
+            margin: 20px 0;
+        }
+
+        .payment-method {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+
+        .payment-method:hover {
+            background: #f0f0f0;
+        }
+
+        .payment-method.selected {
+            border-color: #1a1a1a;
+            background: #f0f0f0;
+        }
+
+        .total-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #ddd;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .btn {
+            background: #1a1a1a;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .btn:hover {
+            background: #333;
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>MAJI KAYO BAR</h1>
+        </div>
+
+        <div class="nav-section">
+            <h3>Admin Functions</h3>
+            <a href="{{ url_for('employee_register') }}" class="nav-item admin-only">
+                จัดการทะเบียนพนักงาน
+            </a>
+            <a href="{{ url_for('promotion_list') }}" class="nav-item admin-only">
+                จัดการรายการโปรโมชั่น
+            </a>
+            <a href="{{ url_for('performance_report') }}" class="nav-item admin-only">
+                จัดพิมพ์รายงานแสดงผลการดำเนินงาน
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <h3>Operations</h3>
+            <a href="{{ url_for('inventory') }}" class="nav-item">
+                จัดการคลังสินค้า
+            </a>
+            <a href="{{ url_for('food_list') }}" class="nav-item">
+                จัดการรายการอาหาร
+            </a>
+            <a href="{{ url_for('table_register') }}" class="nav-item">
+                จัดการทะเบียนโต๊ะ
+            </a>
+            <a href="{{ url_for('receive_order') }}" class="nav-item">
+                รับออเดอร์
+            </a>
+            <a href="{{ url_for('pay_service') }}" class="nav-item active">
+                ชำระค่าบริการ
+            </a>
+            <a href="{{ url_for('store_goods') }}" class="nav-item">
+                รับฝากสินค้า
+            </a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="content-header">
+            <h2>ชำระค่าบริการ</h2>
+            <p>เลือกโต๊ะและชำระเงิน</p>
+        </div>
+
+        <div class="content-body">
+            <div class="payment-grid">
+                <div class="table-section">
+                    <h3>เลือกโต๊ะ</h3>
+                    <div class="table-grid" id="tableGrid">
+                        {% for table in tables %}
+                        <div class="table-item {{ 'occupied' if not table.is_available else 'available' }}" 
+                             data-table-id="{{ table.id }}">
+                            <h3>โต๊ะ {{ table.table_number }}</h3>
+                            <p>{{ 'ในร้าน' if table.table_number <= 5 else 'นอกร้าน' }}</p>
+                            <p>{{ 'ไม่ว่าง' if not table.is_available else 'ว่าง' }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="payment-section">
+                    <h3>รายการอาหาร</h3>
+                    <div class="order-details" id="orderDetails">
+                        <!-- Order items will be loaded here -->
+                    </div>
+
+                    <h3>โปรโมชั่น</h3>
+                    <div class="promotion-section" id="promotionSection">
+                        <!-- Promotions will be loaded here -->
+                    </div>
+
+                    <h3>เลือกวิธีการชำระเงิน</h3>
+                    <div class="payment-methods">
+                        <div class="payment-method selected" data-method="cash">
+                            <input type="radio" name="payment" id="cash" checked>
+                            <label for="cash">เงินสด</label>
+                        </div>
+                        <div class="payment-method" data-method="card">
+                            <input type="radio" name="payment" id="card">
+                            <label for="card">บัตรเครดิต/เดบิต</label>
+                        </div>
+                        <div class="payment-method" data-method="promptpay">
+                            <input type="radio" name="payment" id="promptpay">
+                            <label for="promptpay">พร้อมเพย์</label>
+                        </div>
+                    </div>
+
+                    <div class="total-section">
+                        <div class="total-row">
+                            <span>ยอดรวม</span>
+                            <span id="subtotal">฿0.00</span>
+                        </div>
+                        <div class="total-row">
+                            <span>ส่วนลด</span>
+                            <span id="discount">฿0.00</span>
+                        </div>
+                        <div class="total-row" style="font-weight: bold;">
+                            <span>ยอดรวมทั้งสิ้น</span>
+                            <span id="total">฿0.00</span>
+                        </div>
+                    </div>
+
+                    <button class="btn" id="payButton" disabled>ชำระเงิน</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedTable = null;
+        let selectedOrder = null;
+        let selectedPromotion = null;
+        let selectedPaymentMethod = 'cash';
+
+        // Load tables
+        document.querySelectorAll('.table-item.occupied').forEach(table => {
+            table.addEventListener('click', () => selectTable(table));
+        });
+
+        // Payment method selection
+        document.querySelectorAll('.payment-method').forEach(method => {
+            method.addEventListener('click', function() {
+                document.querySelectorAll('.payment-method').forEach(m => m.classList.remove('selected'));
+                this.classList.add('selected');
+                this.querySelector('input[type="radio"]').checked = true;
+                selectedPaymentMethod = this.dataset.method;
+            });
+        });
+
+        async function selectTable(tableElement) {
+            // Remove selected class from all tables
+            document.querySelectorAll('.table-item').forEach(table => {
+                table.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked table
+            tableElement.classList.add('selected');
+            
+            // Get table ID
+            const tableId = tableElement.dataset.tableId;
+            selectedTable = tableId;
+
+            try {
+                // Get pending orders for this table
+                const response = await fetch('/api/orders');
+                const orders = await response.json();
+                const order = orders.find(o => o.table_id == tableId);
+                
+                if (order) {
+                    selectedOrder = order;
+                    // Load order details and promotions concurrently
+                    await Promise.all([
+                        loadOrderDetails(order.id),
+                        loadPromotions()
+                    ]);
+                    
+                    // Apply promotions after both are loaded
+                    const subtotalElement = document.getElementById('subtotal');
+                    const subtotal = parseFloat(subtotalElement.textContent.replace('฿', ''));
+                    updateTotal(subtotal);
+                    
+                    document.getElementById('payButton').disabled = false;
+                } else {
+                    alert('ไม่พบรายการอาหารสำหรับโต๊ะนี้');
+                    location.reload();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+            }
+        }
+
+        async function loadOrderDetails(orderId) {
+            try {
+                const response = await fetch(`/api/orders/${orderId}`);
+                const data = await response.json();
+                
+                const orderDetails = document.getElementById('orderDetails');
+                orderDetails.innerHTML = '';
+                
+                // Group items by name
+                const groupedItems = {};
+                data.items.forEach(item => {
+                    if (!groupedItems[item.item_name]) {
+                        groupedItems[item.item_name] = {
+                            name: item.item_name,
+                            price: item.price,
+                            quantity: 0
+                        };
+                    }
+                    groupedItems[item.item_name].quantity += item.quantity;
+                });
+                
+                let subtotal = 0;
+                Object.values(groupedItems).forEach(item => {
+                    const itemTotal = item.price * item.quantity;
+                    subtotal += itemTotal;
+                    
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'order-item';
+                    itemDiv.innerHTML = `
+                        <div>
+                            <h4>${item.name}</h4>
+                            <p>฿${item.price.toFixed(2)} x ${item.quantity}</p>
+                        </div>
+                        <div class="item-price">
+                            ฿${itemTotal.toFixed(2)}
+                        </div>
+                    `;
+                    orderDetails.appendChild(itemDiv);
+                });
+                
+                document.getElementById('subtotal').textContent = `฿${subtotal.toFixed(2)}`;
+                updateTotal(subtotal);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('เกิดข้อผิดพลาดในการโหลดรายการอาหาร');
+            }
+        }
+
+        async function loadPromotions() {
+            try {
+                const response = await fetch('/api/promotions');
+                const promotions = await response.json();
+                
+                const promotionSection = document.getElementById('promotionSection');
+                promotionSection.innerHTML = '';
+                
+                promotions.forEach(promotion => {
+                    const promotionDiv = document.createElement('div');
+                    promotionDiv.className = 'promotion-item';
+                    promotionDiv.innerHTML = `
+                        <div>
+                            <h4>${promotion.name}</h4>
+                            <p>${promotion.food_name}</p>
+                        </div>
+                        <div class="promotion-discount">
+                            -${promotion.discount_percentage}%
+                        </div>
+                    `;
+                    promotionSection.appendChild(promotionDiv);
+                });
+
+                // Update totals after loading promotions
+                const subtotalElement = document.getElementById('subtotal');
+                const subtotal = parseFloat(subtotalElement.textContent.replace('฿', ''));
+                updateTotal(subtotal, promotions);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('เกิดข้อผิดพลาดในการโหลดโปรโมชั่น');
+            }
+        }
+
+        function updateTotal(subtotal, promotions = null) {
+            let totalDiscount = 0;
+            
+            // Get promotions if not provided
+            if (!promotions) {
+                const promotionDivs = document.querySelectorAll('.promotion-item');
+                promotions = Array.from(promotionDivs).map(div => ({
+                    name: div.querySelector('h4').textContent,
+                    food_name: div.querySelector('p').textContent,
+                    discount_percentage: parseFloat(div.querySelector('.promotion-discount').textContent.replace('-', '').replace('%', ''))
+                }));
+            }
+            
+            // Get all order items
+            const orderItems = document.querySelectorAll('.order-item');
+            orderItems.forEach(orderItem => {
+                const itemName = orderItem.querySelector('h4').textContent;
+                const itemPriceText = orderItem.querySelector('p').textContent;
+                const quantity = parseInt(itemPriceText.split('x')[1].trim());
+                const price = parseFloat(itemPriceText.split('฿')[1].split('x')[0].trim());
+                
+                // Find if this item has a promotion
+                const itemPromotion = promotions.find(p => p.food_name === itemName);
+                if (itemPromotion) {
+                    const discountPercentage = parseFloat(itemPromotion.discount_percentage);
+                    const itemDiscount = price * quantity * (discountPercentage / 100);
+                    totalDiscount += itemDiscount;
+                }
+            });
+            
+            const total = subtotal - totalDiscount;
+            
+            document.getElementById('discount').textContent = `฿${totalDiscount.toFixed(2)}`;
+            document.getElementById('total').textContent = `฿${total.toFixed(2)}`;
+        }
+
+        document.getElementById('payButton').addEventListener('click', async function() {
+            if (!selectedOrder) {
+                alert('กรุณาเลือกโต๊ะที่มีรายการอาหาร');
+                return;
+            }
+
+            try {
+                // Get all active promotions for the order
+                const promotionDivs = document.querySelectorAll('.promotion-item');
+                const activePromotions = Array.from(promotionDivs)
+                    .map(div => ({
+                        name: div.querySelector('h4').textContent,
+                        food_name: div.querySelector('p').textContent,
+                        id: div.dataset.promotionId
+                    }));
+
+                const response = await fetch(`/api/orders/${selectedOrder.id}/pay`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        payment_method: selectedPaymentMethod,
+                        promotions: activePromotions
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('เกิดข้อผิดพลาดในการชำระเงิน');
+                }
+
+                const data = await response.json();
+                alert('ชำระเงินเรียบร้อยแล้ว');
+                
+                // Reset everything
+                selectedTable = null;
+                selectedOrder = null;
+                selectedPromotion = null;
+                document.querySelectorAll('.table-item').forEach(table => {
+                    table.classList.remove('selected');
+                });
+                document.getElementById('orderDetails').innerHTML = '';
+                document.getElementById('promotionSection').innerHTML = '';
+                document.getElementById('subtotal').textContent = '฿0.00';
+                document.getElementById('discount').textContent = '฿0.00';
+                document.getElementById('total').textContent = '฿0.00';
+                document.getElementById('payButton').disabled = true;
+                
+                // Reload page to update table status
+                location.reload();
+            } catch (error) {
+                console.error('Error:', error);
+                alert(error.message);
+            }
+        });
+    </script>
+</body>
+</html> 

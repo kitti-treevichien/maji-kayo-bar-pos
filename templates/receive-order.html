@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>รับออเดอร์ - MAJI KAYO BAR</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: #1a1a1a;
+            color: white;
+            padding: 20px 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 0 20px 20px 20px;
+            border-bottom: 1px solid #333;
+            margin-bottom: 20px;
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-header p {
+            font-size: 0.9em;
+            color: #999;
+        }
+
+        .nav-section {
+            margin-bottom: 20px;
+        }
+
+        .nav-section h3 {
+            padding: 10px 20px;
+            color: #666;
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .nav-item {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            color: #fff;
+            text-decoration: none;
+            transition: background-color 0.3s;
+            cursor: pointer;
+        }
+
+        .nav-item:hover {
+            background-color: #333;
+        }
+
+        .nav-item.active {
+            background-color: #333;
+            border-left: 4px solid #ff4444;
+        }
+
+        .admin-only {
+            color: #ff4444;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            flex: 1;
+            padding: 20px;
+        }
+
+        .content-header {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .content-header h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .content-body {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .order-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        .menu-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .menu-categories {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .category-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            background: #e0e0e0;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .category-btn.active {
+            background: #1a1a1a;
+            color: white;
+        }
+
+        .menu-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .menu-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .menu-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .menu-item h3 {
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .menu-item p {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .menu-item .price {
+            color: #1a1a1a;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .order-summary {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            position: sticky;
+            top: 20px;
+        }
+
+        .order-items {
+            margin: 20px 0;
+        }
+
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .order-item .quantity {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .quantity-btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            background: #1a1a1a;
+            color: white;
+            cursor: pointer;
+        }
+
+        .total-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #ddd;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .btn {
+            background: #1a1a1a;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .btn:hover {
+            background: #333;
+        }
+
+        .table-selection {
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .table-grid {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .table-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+            min-width: 0;
+        }
+
+        .table-item.available {
+            background: #e8f5e9;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .table-item.occupied {
+            background: #ffebee;
+            cursor: pointer;
+        }
+
+        .table-item.selected {
+            border-color: #1a1a1a;
+            background: #1a1a1a;
+            color: white;
+        }
+
+        .menu-section {
+            display: none;
+        }
+
+        .menu-section.active {
+            display: block;
+        }
+
+        .menu-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .menu-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .menu-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .menu-item h3 {
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .menu-item .price {
+            color: #1a1a1a;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .order-summary {
+            display: none;
+        }
+
+        .order-summary.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>MAJI KAYO BAR</h1>
+        </div>
+
+        <div class="nav-section">
+            <h3>Admin Functions</h3>
+            <a href="{{ url_for('employee_register') }}" class="nav-item admin-only">
+                จัดการทะเบียนพนักงาน
+            </a>
+            <a href="{{ url_for('promotion_list') }}" class="nav-item admin-only">
+                จัดการรายการโปรโมชั่น
+            </a>
+            <a href="{{ url_for('performance_report') }}" class="nav-item admin-only">
+                จัดพิมพ์รายงานแสดงผลการดำเนินงาน
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <h3>Operations</h3>
+            <a href="{{ url_for('inventory') }}" class="nav-item">
+                จัดการคลังสินค้า
+            </a>
+            <a href="{{ url_for('food_list') }}" class="nav-item">
+                จัดการรายการอาหาร
+            </a>
+            <a href="{{ url_for('table_register') }}" class="nav-item">
+                จัดการทะเบียนโต๊ะ
+            </a>
+            <a href="{{ url_for('receive_order') }}" class="nav-item active">
+                รับออเดอร์
+            </a>
+            <a href="{{ url_for('pay_service') }}" class="nav-item">
+                ชำระค่าบริการ
+            </a>
+            <a href="{{ url_for('store_goods') }}" class="nav-item">
+                รับฝากสินค้า
+            </a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="content-header">
+            <h2>รับออเดอร์</h2>
+            <p>เลือกโต๊ะและรายการอาหาร</p>
+        </div>
+
+        <div class="content-body">
+            <div class="table-selection">
+                <h3>เลือกโต๊ะ</h3>
+                <div class="table-grid" id="tableGrid">
+                    <!-- Tables will be loaded here -->
+                </div>
+            </div>
+
+            <div class="order-grid">
+                <div class="menu-section" id="menuSection">
+                    <h3>รายการอาหาร</h3>
+                    <div class="menu-items" id="menuItems">
+                        <!-- Menu items will be loaded here -->
+                    </div>
+                </div>
+
+                <div class="order-summary" id="orderSummary">
+                    <h3>สรุปรายการ</h3>
+                    <div class="order-items" id="orderItems">
+                        <!-- Order items will be loaded here -->
+                    </div>
+                    <div class="total-section">
+                        <div class="total-row">
+                            <span>จำนวนออเดอร์</span>
+                            <span id="orderCount">0</span>
+                        </div>
+                        <div class="total-row">
+                            <span>ยอดขาดรวม</span>
+                            <span id="totalAmount">0.00 บาท</span>
+                        </div>
+                    </div>
+                    <button class="btn" onclick="submitOrder()">ยืนยันออเดอร์</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedTable = null;
+        let currentOrder = null;
+        let orderItems = [];
+
+        // Load available tables
+        function loadTables() {
+            fetch('/api/tables')
+                .then(response => response.json())
+                .then(tables => {
+                    const tableGrid = document.getElementById('tableGrid');
+                    tableGrid.innerHTML = '';
+                    tables.forEach(table => {
+                        const tableDiv = document.createElement('div');
+                        tableDiv.className = `table-item ${table.is_available ? 'available' : 'occupied'}`;
+                        tableDiv.textContent = `โต๊ะ ${table.table_number}`;
+                        if (!table.is_available) {
+                            tableDiv.onclick = () => selectTable(table);
+                        }
+                        tableGrid.appendChild(tableDiv);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Load menu items
+        function loadMenuItems() {
+            fetch('/api/menu')
+                .then(response => response.json())
+                .then(items => {
+                    const menuItems = document.getElementById('menuItems');
+                    menuItems.innerHTML = '';
+                    items.forEach(item => {
+                        const itemDiv = document.createElement('div');
+                        itemDiv.className = 'menu-item';
+                        itemDiv.innerHTML = `
+                            <h3>${item.name}</h3>
+                            <p class="price">${item.price.toFixed(2)} บาท</p>
+                        `;
+                        itemDiv.onclick = () => addToOrder(item);
+                        menuItems.appendChild(itemDiv);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        async function selectTable(table) {
+            selectedTable = table;
+            document.querySelectorAll('.table-item').forEach(el => el.classList.remove('selected'));
+            event.target.classList.add('selected');
+            
+            // Reset order data
+            currentOrder = null;
+            orderItems = [];
+            
+            // Show menu and order summary sections
+            document.getElementById('menuSection').classList.add('active');
+            document.getElementById('orderSummary').classList.add('active');
+            
+            // Clear and update order summary
+            document.getElementById('orderItems').innerHTML = '';
+            document.getElementById('totalAmount').textContent = '0.00 บาท';
+            
+            // Load menu items
+            loadMenuItems();
+        }
+
+        function addToOrder(item) {
+            const existingItem = orderItems.find(i => i.id === item.id);
+            if (existingItem) {
+                existingItem.quantity++;
+            } else {
+                orderItems.push({
+                    id: item.id,
+                    name: item.name,
+                    price: item.price,
+                    quantity: 1
+                });
+            }
+            updateOrderSummary();
+        }
+
+        function updateOrderSummary() {
+            const orderItemsDiv = document.getElementById('orderItems');
+            const totalAmount = document.getElementById('totalAmount');
+            const orderCount = document.getElementById('orderCount');
+            let total = 0;
+            let count = 0;
+
+            orderItemsDiv.innerHTML = '';
+            orderItems.forEach(item => {
+                const itemTotal = item.price * item.quantity;
+                total += itemTotal;
+                count += item.quantity;
+
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'order-item';
+                itemDiv.innerHTML = `
+                    <div>
+                        <h4>${item.name}</h4>
+                        <p>${item.price.toFixed(2)} บาท</p>
+                    </div>
+                    <div class="quantity">
+                        <button class="quantity-btn" onclick="updateQuantity(${item.id}, ${item.quantity - 1})">-</button>
+                        <span>${item.quantity}</span>
+                        <button class="quantity-btn" onclick="updateQuantity(${item.id}, ${item.quantity + 1})">+</button>
+                    </div>
+                `;
+                orderItemsDiv.appendChild(itemDiv);
+            });
+
+            totalAmount.textContent = `${total.toFixed(2)} บาท`;
+            orderCount.textContent = count;
+        }
+
+        function updateQuantity(itemId, newQuantity) {
+            if (newQuantity <= 0) {
+                orderItems = orderItems.filter(item => item.id !== itemId);
+            } else {
+                const item = orderItems.find(item => item.id === itemId);
+                if (item) {
+                    item.quantity = newQuantity;
+                }
+            }
+            updateOrderSummary();
+        }
+
+        function submitOrder() {
+            if (!selectedTable || orderItems.length === 0) {
+                alert('กรุณาเลือกโต๊ะและรายการอาหาร');
+                return;
+            }
+
+            const orderData = {
+                table_id: selectedTable.id,
+                items: orderItems.map(item => ({
+                    menu_item_id: item.id,
+                    quantity: item.quantity
+                }))
+            };
+
+            console.log('Sending order data:', orderData); // Debug log
+
+            // Get CSRF token from meta tag
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+            fetch('/api/orders', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify(orderData)
+            })
+            .then(response => {
+                console.log('Response status:', response.status); // Debug log
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        console.log('Error response:', text); // Debug log
+                        throw new Error(text || 'เกิดข้อผิดพลาดในการยืนยันออเดอร์');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert('ยืนยันออเดอร์เรียบร้อยแล้ว');
+                // Reset everything
+                selectedTable = null;
+                currentOrder = null;
+                orderItems = [];
+                
+                // Reset UI
+                document.getElementById('menuSection').classList.remove('active');
+                document.getElementById('orderSummary').classList.remove('active');
+                document.querySelectorAll('.table-item').forEach(el => el.classList.remove('selected'));
+                
+                // Clear order items display
+                document.getElementById('orderItems').innerHTML = '';
+                document.getElementById('totalAmount').textContent = '0.00 บาท';
+                
+                // Reload tables and menu items
+                loadTables();
+                loadMenuItems();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(error.message || 'เกิดข้อผิดพลาดในการยืนยันออเดอร์');
+            });
+        }
+
+        // Load tables when page loads
+        document.addEventListener('DOMContentLoaded', loadTables);
+    </script>
+</body>
+</html> 

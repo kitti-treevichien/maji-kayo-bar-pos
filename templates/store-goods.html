@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>รับฝากสินค้า - MAJI KAYO BAR</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: #1a1a1a;
+            color: white;
+            padding: 20px 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 0 20px 20px 20px;
+            border-bottom: 1px solid #333;
+            margin-bottom: 20px;
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-header p {
+            font-size: 0.9em;
+            color: #999;
+        }
+
+        .nav-section {
+            margin-bottom: 20px;
+        }
+
+        .nav-section h3 {
+            padding: 10px 20px;
+            color: #666;
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .nav-item {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            color: #fff;
+            text-decoration: none;
+            transition: background-color 0.3s;
+            cursor: pointer;
+        }
+
+        .nav-item:hover {
+            background-color: #333;
+        }
+
+        .nav-item.active {
+            background-color: #333;
+            border-left: 4px solid #ff4444;
+        }
+
+        .admin-only {
+            color: #ff4444;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            flex: 1;
+            padding: 20px;
+        }
+
+        .content-header {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .content-header h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .content-body {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .form-group textarea {
+            height: 100px;
+            resize: vertical;
+        }
+
+        .btn {
+            background: #1a1a1a;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #333;
+        }
+
+        .stored-items {
+            margin-top: 40px;
+        }
+
+        .stored-items h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .item-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .item-card h4 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.8em;
+            font-weight: bold;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .item-details {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+
+        .item-details p {
+            margin-bottom: 5px;
+        }
+
+        .item-status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            margin-top: 10px;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .action-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .edit-btn {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .delete-btn {
+            background: #f44336;
+            color: white;
+        }
+
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 800px;
+            border-radius: 10px;
+            position: relative;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: black;
+        }
+
+        .modal-content .form-grid {
+            margin-top: 20px;
+            gap: 5px;
+        }
+
+        .modal-content .btn {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>MAJI KAYO BAR</h1>
+        </div>
+
+        <div class="nav-section">
+            <h3>Admin Functions</h3>
+            <a href="{{ url_for('employee_register') }}" class="nav-item admin-only">
+                จัดการทะเบียนพนักงาน
+            </a>
+            <a href="{{ url_for('promotion_list') }}" class="nav-item admin-only">
+                จัดการรายการโปรโมชั่น
+            </a>
+            <a href="{{ url_for('performance_report') }}" class="nav-item admin-only">
+                จัดพิมพ์รายงานแสดงผลการดำเนินงาน
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <h3>Operations</h3>
+            <a href="{{ url_for('inventory') }}" class="nav-item">
+                จัดการคลังสินค้า
+            </a>
+            <a href="{{ url_for('food_list') }}" class="nav-item">
+                จัดการรายการอาหาร
+            </a>
+            <a href="{{ url_for('table_register') }}" class="nav-item">
+                จัดการทะเบียนโต๊ะ
+            </a>
+            <a href="{{ url_for('receive_order') }}" class="nav-item">
+                รับออเดอร์
+            </a>
+            <a href="{{ url_for('pay_service') }}" class="nav-item">
+                ชำระค่าบริการ
+            </a>
+            <a href="{{ url_for('store_goods') }}" class="nav-item active">
+                รับฝากสินค้า
+            </a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="content-header">
+            <h2>รับฝากสินค้า</h2>
+            <p>จัดการการรับฝากสินค้าของลูกค้า</p>
+        </div>
+
+        <div class="content-body">
+            <button class="btn" onclick="openStoreGoodsModal()">รับฝากสินค้าใหม่</button>
+
+            <div class="stored-items">
+                <h2>รายการสินค้าที่ฝาก</h2>
+                <div class="items-grid">
+                    {% for good in goods %}
+                    <div class="item-card">
+                        <h4>{{ good.item_name }}</h4>
+                        <div class="item-details">
+                            <p>ผู้ฝาก: {{ good.customer_name }}</p>
+                            <p>เบอร์โทร: {{ good.customer_phone }}</p>
+                            <p>จำนวน: {{ good.quantity }} ชิ้น</p>
+                            <p>วันที่ฝาก: {{ good.deposit_date }}</p>
+                            <p>วันที่รับคืน: {{ good.expiration_date }}</p>
+                            {% if good.notes %}
+                            <p>หมายเหตุ: {{ good.notes }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="item-status {% if good.expiration_date < today %}status-completed{% else %}status-pending{% endif %}">
+                            {% if good.expiration_date < today %}รับคืนแล้ว{% else %}รอรับคืน{% endif %}
+                        </div>
+                        <div class="actions">
+                            <button class="action-btn edit-btn" onclick="editStoreGood({{ good.id }}, '{{ good.customer_name }}', '{{ good.customer_phone }}', '{{ good.item_name }}', {{ good.quantity }}, '{{ good.deposit_date }}', '{{ good.expiration_date }}', '{{ good.notes }}')">แก้ไข</button>
+                            <button class="action-btn delete-btn" onclick="deleteStoreGood({{ good.id }})">ลบ</button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Store Goods Modal -->
+    <div id="storeGoodsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeStoreGoodsModal()">&times;</span>
+            <h2>รับฝากสินค้าใหม่</h2>
+            <form id="storeGoodsForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="customerName">ชื่อลูกค้า</label>
+                        <input type="text" id="customerName" name="customerName" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">เบอร์โทรศัพท์</label>
+                        <input type="tel" id="phone" name="phone" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="itemName">ชื่อสินค้า</label>
+                        <input type="text" id="itemName" name="itemName" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="quantity">จำนวน</label>
+                        <input type="number" id="quantity" name="quantity" min="1" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="storeDate">วันที่ฝาก</label>
+                        <input type="date" id="storeDate" name="storeDate" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="pickupDate">วันที่รับคืน</label>
+                        <input type="date" id="pickupDate" name="pickupDate" required>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="notes">หมายเหตุ</label>
+                        <input type="text" id="notes" name="notes">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn">บันทึก</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentEditId = null;
+
+        // Set default dates
+        window.onload = function() {
+            const today = new Date();
+            const nextWeek = new Date(today);
+            nextWeek.setDate(today.getDate() + 7);
+            
+            document.getElementById('storeDate').valueAsDate = today;
+            document.getElementById('pickupDate').valueAsDate = nextWeek;
+        }
+
+        // Modal functions
+        function openStoreGoodsModal() {
+            currentEditId = null;
+            document.getElementById('storeGoodsForm').reset();
+            document.getElementById('storeGoodsModal').style.display = 'block';
+        }
+
+        function closeStoreGoodsModal() {
+            document.getElementById('storeGoodsModal').style.display = 'none';
+            document.getElementById('storeGoodsForm').reset();
+            currentEditId = null;
+        }
+
+        function editStoreGood(id, customerName, phone, itemName, quantity, depositDate, expirationDate, notes) {
+            currentEditId = id;
+            document.getElementById('customerName').value = customerName;
+            document.getElementById('phone').value = phone;
+            document.getElementById('itemName').value = itemName;
+            document.getElementById('quantity').value = quantity;
+            document.getElementById('storeDate').value = depositDate;
+            document.getElementById('pickupDate').value = expirationDate;
+            document.getElementById('notes').value = notes || '';
+            document.getElementById('storeGoodsModal').style.display = 'block';
+        }
+
+        async function deleteStoreGood(id) {
+            if (!confirm('คุณต้องการลบรายการนี้ใช่หรือไม่?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/store-goods/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('ไม่สามารถลบข้อมูลได้');
+                }
+
+                const result = await response.json();
+                alert(result.message);
+                location.reload();
+            } catch (error) {
+                alert('เกิดข้อผิดพลาดในการลบข้อมูล: ' + error.message);
+            }
+        }
+
+        // Phone number validation
+        document.getElementById('phone').addEventListener('input', function(e) {
+            // Remove any non-digit characters
+            let value = e.target.value.replace(/\D/g, '');
+            // Limit to 10 digits
+            value = value.substring(0, 10);
+            e.target.value = value;
+        });
+
+        // Form submission handler
+        document.getElementById('storeGoodsForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const formData = {
+                customer_name: document.getElementById('customerName').value.trim(),
+                customer_phone: document.getElementById('phone').value.trim(),
+                item_name: document.getElementById('itemName').value.trim(),
+                quantity: parseInt(document.getElementById('quantity').value),
+                deposit_date: document.getElementById('storeDate').value,
+                expiration_date: document.getElementById('pickupDate').value,
+                notes: document.getElementById('notes').value.trim()
+            };
+
+            // Validate phone number
+            if (formData.customer_phone.length !== 10) {
+                alert('กรุณากรอกเบอร์โทรศัพท์ให้ครบ 10 หลัก');
+                return;
+            }
+
+            try {
+                const url = currentEditId ? `/api/store-goods/${currentEditId}` : '/api/store-goods';
+                const method = currentEditId ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+                }
+
+                const result = await response.json();
+                alert(result.message);
+                location.reload();
+            } catch (error) {
+                alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html> 

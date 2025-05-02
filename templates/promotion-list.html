@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>จัดการรายการโปรโมชั่น - MAJI KAYO BAR</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: #1a1a1a;
+            color: white;
+            padding: 20px 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 0 20px 20px 20px;
+            border-bottom: 1px solid #333;
+            margin-bottom: 20px;
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-header p {
+            font-size: 0.9em;
+            color: #999;
+        }
+
+        .nav-section {
+            margin-bottom: 20px;
+        }
+
+        .nav-section h3 {
+            padding: 10px 20px;
+            color: #666;
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .nav-item {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            color: #fff;
+            text-decoration: none;
+            transition: background-color 0.3s;
+            cursor: pointer;
+        }
+
+        .nav-item:hover {
+            background-color: #333;
+        }
+
+        .nav-item.active {
+            background-color: #333;
+            border-left: 4px solid #ff4444;
+        }
+
+        .admin-only {
+            color: #ff4444;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            flex: 1;
+            padding: 20px;
+        }
+
+        .content-header {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .content-header h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .content-body {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .btn {
+            background: #1a1a1a;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .edit-btn, .delete-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .edit-btn {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .delete-btn {
+            background: #f44336;
+            color: white;
+        }
+
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 800px;
+            border-radius: 10px;
+            position: relative;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: black;
+        }
+
+        .modal-content .form-grid {
+            margin-top: 20px;
+            gap: 5px;
+        }
+
+        .modal-content .btn {
+            margin-top: 20px;
+        }
+
+        .promotion-list {
+            margin-top: 40px;
+        }
+
+        .promotion-list h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>MAJI KAYO BAR</h1>
+        </div>
+
+        <div class="nav-section">
+            <h3>Admin Functions</h3>
+            <a href="{{ url_for('employee_register') }}" class="nav-item admin-only">
+                จัดการทะเบียนพนักงาน
+            </a>
+            <a href="{{ url_for('promotion_list') }}" class="nav-item admin-only active">
+                จัดการรายการโปรโมชั่น
+            </a>
+            <a href="{{ url_for('performance_report') }}" class="nav-item admin-only">
+                จัดพิมพ์รายงานแสดงผลการดำเนินงาน
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <h3>Operations</h3>
+            <a href="{{ url_for('inventory') }}" class="nav-item">
+                จัดการคลังสินค้า
+            </a>
+            <a href="{{ url_for('food_list') }}" class="nav-item">
+                จัดการรายการอาหาร
+            </a>
+            <a href="{{ url_for('table_register') }}" class="nav-item">
+                จัดการทะเบียนโต๊ะ
+            </a>
+            <a href="{{ url_for('receive_order') }}" class="nav-item">
+                รับออเดอร์
+            </a>
+            <a href="{{ url_for('pay_service') }}" class="nav-item">
+                ชำระค่าบริการ
+            </a>
+            <a href="{{ url_for('store_goods') }}" class="nav-item">
+                รับฝากสินค้า
+            </a>
+        </div>
+    </div>
+
+    <div class="main-content" id="mainContent" style="display: none;">
+        <div class="content-header">
+            <h2>จัดการโปรโมชั่น</h2>
+            <p>จัดการโปรโมชั่นและส่วนลดทั้งหมด</p>
+        </div>
+
+        <div class="content-body">
+            <button class="btn" onclick="openPromotionModal()">เพิ่มโปรโมชั่นใหม่</button>
+
+            <div class="promotion-list">
+                <h2>รายการโปรโมชั่นทั้งหมด</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ชื่อโปรโมชั่น</th>
+                            <th>รายการอาหาร</th>
+                            <th>ส่วนลด</th>
+                            <th>การจัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Promotion rows will be dynamically added here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Promotion Modal -->
+    <div id="promotionModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closePromotionModal()">&times;</span>
+            <h2>เพิ่มโปรโมชั่นใหม่</h2>
+            <form id="promotionForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="promotionName">ชื่อโปรโมชั่น</label>
+                        <input type="text" id="promotionName" name="promotionName" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="menuItem">รายการอาหาร</label>
+                        <select id="menuItem" name="menuItem" required>
+                            <option value="">เลือกรายการอาหาร</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label for="discount">ส่วนลด (%)</label>
+                        <input type="number" id="discount" name="discount" min="0" max="100" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn">เพิ่มโปรโมชั่น</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Remove password check and show content immediately
+        window.onload = function() {
+            document.getElementById('mainContent').style.display = 'block';
+            loadMenuItems();
+            loadPromotions();
+        }
+
+        // Load menu items for dropdown
+        function loadMenuItems() {
+            fetch('/api/menu')
+                .then(response => response.json())
+                .then(items => {
+                    const select = document.getElementById('menuItem');
+                    items.forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item.id;
+                        option.textContent = item.name;
+                        select.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Load promotions
+        function loadPromotions() {
+            fetch('/api/promotions')
+                .then(response => response.json())
+                .then(promotions => {
+                    const tbody = document.querySelector('tbody');
+                    tbody.innerHTML = '';
+                    promotions.forEach(promotion => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${promotion.name}</td>
+                            <td>${promotion.food_name}</td>
+                            <td>${promotion.discount_percentage}%</td>
+                            <td class="actions">
+                                <button class="edit-btn" onclick="editPromotion(${promotion.id})">แก้ไข</button>
+                                <button class="delete-btn" onclick="deletePromotion(${promotion.id})">ลบ</button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Modal functions
+        function openPromotionModal(promotion = null) {
+            const modal = document.getElementById('promotionModal');
+            const form = document.getElementById('promotionForm');
+            const title = document.querySelector('#promotionModal h2');
+            
+            if (promotion) {
+                title.textContent = 'แก้ไขโปรโมชั่น';
+                form.promotionName.value = promotion.name;
+                form.menuItem.value = promotion.menu_item_id;
+                form.discount.value = promotion.discount_percentage;
+                form.dataset.id = promotion.id;
+            } else {
+                title.textContent = 'เพิ่มโปรโมชั่นใหม่';
+                form.reset();
+                delete form.dataset.id;
+            }
+            
+            modal.style.display = 'block';
+        }
+
+        function closePromotionModal() {
+            document.getElementById('promotionModal').style.display = 'none';
+            document.getElementById('promotionForm').reset();
+            delete document.getElementById('promotionForm').dataset.id;
+        }
+
+        // Edit promotion
+        function editPromotion(id) {
+            fetch(`/api/promotions/${id}`)
+                .then(response => response.json())
+                .then(promotion => {
+                    const form = document.getElementById('promotionForm');
+                    form.promotionName.value = promotion.name;
+                    // Find the menu item option with matching text
+                    const menuItemSelect = form.menuItem;
+                    for (let i = 0; i < menuItemSelect.options.length; i++) {
+                        if (menuItemSelect.options[i].text === promotion.food_name) {
+                            menuItemSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                    form.discount.value = promotion.discount_percentage;
+                    form.dataset.id = promotion.id;
+                    openPromotionModal(promotion);
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Delete promotion
+        function deletePromotion(id) {
+            if (confirm('คุณต้องการลบโปรโมชั่นนี้ใช่หรือไม่?')) {
+                fetch(`/api/promotions/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert('ลบโปรโมชั่นเรียบร้อยแล้ว');
+                    loadPromotions();
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        }
+
+        // Form submission handler
+        document.getElementById('promotionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                name: this.promotionName.value,
+                food_name: this.menuItem.options[this.menuItem.selectedIndex].text,
+                discount_percentage: parseInt(this.discount.value)
+            };
+
+            const method = this.dataset.id ? 'PUT' : 'POST';
+            const url = this.dataset.id ? `/api/promotions/${this.dataset.id}` : '/api/promotions';
+
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(this.dataset.id ? 'แก้ไขโปรโมชั่นเรียบร้อยแล้ว' : 'เพิ่มโปรโมชั่นเรียบร้อยแล้ว');
+                closePromotionModal();
+                loadPromotions();
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จัดพิมพ์รายงานแสดงผลการดำเนินงาน - MAJI KAYO BAR</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: #1a1a1a;
+            color: white;
+            padding: 20px 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 0 20px 20px 20px;
+            border-bottom: 1px solid #333;
+            margin-bottom: 20px;
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-header p {
+            font-size: 0.9em;
+            color: #999;
+        }
+
+        .nav-section {
+            margin-bottom: 20px;
+        }
+
+        .nav-section h3 {
+            padding: 10px 20px;
+            color: #666;
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .nav-item {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            color: #fff;
+            text-decoration: none;
+            transition: background-color 0.3s;
+            cursor: pointer;
+        }
+
+        .nav-item:hover {
+            background-color: #333;
+        }
+
+        .nav-item.active {
+            background-color: #333;
+            border-left: 4px solid #ff4444;
+        }
+
+        .admin-only {
+            color: #ff4444;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            flex: 1;
+            padding: 20px;
+        }
+
+        .content-header {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .content-header h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .content-body {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .btn {
+            background: #1a1a1a;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #333;
+        }
+
+        .report-section {
+            margin-top: 30px;
+        }
+
+        .report-section h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .report-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .report-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .report-card h4 {
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .report-card .value {
+            font-size: 1.5em;
+            color: #333;
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>MAJI KAYO BAR</h1>
+        </div>
+
+        <div class="nav-section">
+            <h3>Admin Functions</h3>
+            <a href="{{ url_for('employee_register') }}" class="nav-item admin-only">
+                จัดการทะเบียนพนักงาน
+            </a>
+            <a href="{{ url_for('promotion_list') }}" class="nav-item admin-only">
+                จัดการรายการโปรโมชั่น
+            </a>
+            <a href="{{ url_for('performance_report') }}" class="nav-item admin-only active">
+                จัดพิมพ์รายงานแสดงผลการดำเนินงาน
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <h3>Operations</h3>
+            <a href="{{ url_for('inventory') }}" class="nav-item">
+                จัดการคลังสินค้า
+            </a>
+            <a href="{{ url_for('food_list') }}" class="nav-item">
+                จัดการรายการอาหาร
+            </a>
+            <a href="{{ url_for('table_register') }}" class="nav-item">
+                จัดการทะเบียนโต๊ะ
+            </a>
+            <a href="{{ url_for('receive_order') }}" class="nav-item">
+                รับออเดอร์
+            </a>
+            <a href="{{ url_for('pay_service') }}" class="nav-item">
+                ชำระค่าบริการ
+            </a>
+            <a href="{{ url_for('store_goods') }}" class="nav-item">
+                รับฝากสินค้า
+            </a>
+        </div>
+    </div>
+
+    <div class="main-content" id="mainContent" style="display: none;">
+        <div class="content-header">
+            <h2>จัดพิมพ์รายงานแสดงผลการดำเนินงาน</h2>
+            <p>ดูและพิมพ์รายงานผลการดำเนินงานของร้าน</p>
+        </div>
+
+        <div class="content-body">
+            <form id="reportForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="reportType">ประเภทรายงาน</label>
+                        <select id="reportType" name="reportType" required>
+                            <option value="daily" selected>รายงานรายวัน</option>
+                            <option value="monthly">รายงานรายเดือน</option>
+                            <option value="yearly">รายงานรายปี</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="startDate">วันที่เริ่มต้น</label>
+                        <input type="date" id="startDate" name="startDate" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="endDate">วันที่สิ้นสุด</label>
+                        <input type="date" id="endDate" name="endDate" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn">ดูรายงาน</button>
+            </form>
+
+            <div class="report-section">
+                <h3>สรุปผลการดำเนินงาน</h3>
+                <div class="report-grid">
+                    <div class="report-card">
+                        <h4>ยอดขายรวม</h4>
+                        <div class="value">฿0.00</div>
+                    </div>
+                    <div class="report-card">
+                        <h4>จำนวนออเดอร์</h4>
+                        <div class="value">0</div>
+                    </div>
+                </div>
+
+                <h3>รายการขายดี</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>รายการอาหาร</th>
+                            <th>จำนวนที่ขาย</th>
+                            <th>ยอดขาย</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add date validation
+        const startDate = document.getElementById('startDate');
+        const endDate = document.getElementById('endDate');
+
+        function validateDates() {
+            // Set min/max for both inputs
+            startDate.max = endDate.value;
+            endDate.min = startDate.value;
+
+            // If start date is after end date, adjust end date
+            if (startDate.value > endDate.value) {
+                endDate.value = startDate.value;
+            }
+        }
+
+        // Add event listeners for date changes
+        startDate.addEventListener('change', validateDates);
+        endDate.addEventListener('change', validateDates);
+
+        // Initial setup
+        window.onload = function() {
+            document.getElementById('mainContent').style.display = 'block';
+            
+            // Reset all values
+            document.querySelector('.report-card:nth-child(1) .value').textContent = '฿0.00';
+            document.querySelector('.report-card:nth-child(2) .value').textContent = '0';
+            
+            // Clear the best sellers table
+            document.querySelector('table:last-of-type tbody').innerHTML = '';
+            
+            // Set default date range to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('startDate').value = today;
+            document.getElementById('endDate').value = today;
+            
+            // Set default report type to daily
+            document.getElementById('reportType').value = 'daily';
+            
+            validateDates();
+        }
+
+        // Function to load report data
+        async function loadReportData(startDate, endDate) {
+            try {
+                const response = await fetch(`/api/reports/sales?start_date=${startDate}&end_date=${endDate}`);
+                const data = await response.json();
+                
+                // Update best sellers table
+                const bestSellersTbody = document.querySelector('table:last-of-type tbody');
+                bestSellersTbody.innerHTML = '';
+                
+                let totalRevenue = 0;
+                let totalOrders = 0;
+
+                if (data.best_sellers) {
+                    data.best_sellers.forEach(item => {
+                        const row = document.createElement('tr');
+                        const quantity = parseInt(item.total_quantity || 0);
+                        const revenue = parseFloat(item.total_revenue || 0);
+                        
+                        totalRevenue += revenue;
+                        totalOrders += quantity;
+
+                        row.innerHTML = `
+                            <td>${item.name}</td>
+                            <td>${quantity.toLocaleString('th-TH')}</td>
+                            <td>฿${revenue.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        `;
+                        bestSellersTbody.appendChild(row);
+                    });
+                }
+
+                // Update summary cards with calculated totals
+                document.querySelector('.report-card:nth-child(1) .value').textContent = 
+                    `฿${totalRevenue.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                document.querySelector('.report-card:nth-child(2) .value').textContent = 
+                    totalOrders.toLocaleString('th-TH');
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('เกิดข้อผิดพลาดในการโหลดรายงาน');
+            }
+        }
+
+        // Form submission handler
+        document.getElementById('reportForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Additional validation before submission
+            if (startDate.value > endDate.value) {
+                alert('วันที่เริ่มต้นต้องไม่เกินวันที่สิ้นสุด');
+                return;
+            }
+            
+            loadReportData(startDate.value, endDate.value);
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>จัดการทะเบียนพนักงาน - MAJI KAYO BAR</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: #1a1a1a;
+            color: white;
+            padding: 20px 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 0 20px 20px 20px;
+            border-bottom: 1px solid #333;
+            margin-bottom: 20px;
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-header p {
+            font-size: 0.9em;
+            color: #999;
+        }
+
+        .nav-section {
+            margin-bottom: 20px;
+        }
+
+        .nav-section h3 {
+            padding: 10px 20px;
+            color: #666;
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .nav-item {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            color: #fff;
+            text-decoration: none;
+            transition: background-color 0.3s;
+            cursor: pointer;
+        }
+
+        .nav-item:hover {
+            background-color: #333;
+        }
+
+        .nav-item.active {
+            background-color: #333;
+            border-left: 4px solid #ff4444;
+        }
+
+        .admin-only {
+            color: #ff4444;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            flex: 1;
+            padding: 20px;
+        }
+
+        .content-header {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .content-header h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .content-body {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 5px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .checkbox-group {
+            display: flex;
+            gap: 40px;
+            align-items: center;
+            flex-wrap: nowrap;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+
+        .military-service {
+            margin-top: 0;
+            padding: 0;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .military-service.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .btn {
+            background: #1a1a1a;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #333;
+        }
+
+        .employee-list {
+            margin-top: 40px;
+        }
+
+        .employee-list h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .edit-btn, .delete-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .edit-btn {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .delete-btn {
+            background: #f44336;
+            color: white;
+        }
+
+        .back-link {
+            margin-bottom: 20px;
+        }
+
+        .back-link a {
+            color: #666;
+            text-decoration: none;
+        }
+
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 800px;
+            border-radius: 10px;
+            position: relative;
+            margin: 0 auto;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: black;
+        }
+
+        .modal-content .form-grid {
+            margin-top: 20px;
+        }
+
+        .modal-content .btn {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>MAJI KAYO BAR</h1>
+        </div>
+
+        <div class="nav-section">
+            <h3>Admin Functions</h3>
+            <a href="{{ url_for('employee_register') }}" class="nav-item admin-only active">
+                จัดการทะเบียนพนักงาน
+            </a>
+            <a href="{{ url_for('promotion_list') }}" class="nav-item admin-only">
+                จัดการรายการโปรโมชั่น
+            </a>
+            <a href="{{ url_for('performance_report') }}" class="nav-item admin-only">
+                จัดพิมพ์รายงานแสดงผลการดำเนินงาน
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <h3>Operations</h3>
+            <a href="{{ url_for('inventory') }}" class="nav-item">
+                จัดการคลังสินค้า
+            </a>
+            <a href="{{ url_for('food_list') }}" class="nav-item">
+                จัดการรายการอาหาร
+            </a>
+            <a href="{{ url_for('table_register') }}" class="nav-item">
+                จัดการทะเบียนโต๊ะ
+            </a>
+            <a href="{{ url_for('receive_order') }}" class="nav-item">
+                รับออเดอร์
+            </a>
+            <a href="{{ url_for('pay_service') }}" class="nav-item">
+                ชำระค่าบริการ
+            </a>
+            <a href="{{ url_for('store_goods') }}" class="nav-item">
+                รับฝากสินค้า
+            </a>
+        </div>
+    </div>
+
+    <div class="main-content" id="mainContent" style="display: none;">
+        <div class="content-header">
+            <h2>จัดการทะเบียนพนักงาน</h2>
+            <p>จัดการข้อมูลพนักงานทั้งหมด</p>
+        </div>
+
+        <div class="content-body">
+            <button class="btn" onclick="openEmployeeModal()">เพิ่มพนักงานใหม่</button>
+
+            <div class="employee-list">
+                <h2>รายชื่อพนักงาน</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ชื่อ-นามสกุล</th>
+                            <th>ตำแหน่ง</th>
+                            <th>เบอร์โทรศัพท์</th>
+                            <th>อีเมล</th>
+                            <th>วันที่บันทึกข้อมูล</th>
+                            <th>การจัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for employee in employees %}
+                        <tr data-id="{{ employee.id }}">
+                            <td>{{ employee.first_name }} {{ employee.last_name }}</td>
+                            <td>{{ employee.position }}</td>
+                            <td>{{ employee.phone }}</td>
+                            <td>{{ employee.email }}</td>
+                            <td>{{ employee.created_at }}</td>
+                            <td class="actions">
+                                <button class="edit-btn" onclick="editEmployee({{ employee.id }}, '{{ employee.first_name }}', '{{ employee.last_name }}', '{{ employee.position }}', {{ employee.salary }}, '{{ employee.address }}', '{{ employee.phone }}', '{{ employee.email }}', '{{ employee.birth_date }}', '{{ employee.nationality }}', '{{ employee.gender }}', '{{ employee.military_status }}', '{{ employee.education_level }}')">แก้ไข</button>
+                                <button class="delete-btn" onclick="deleteEmployee({{ employee.id }})">ลบ</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Employee Modal -->
+    <div id="employeeModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeEmployeeModal()">&times;</span>
+            <h2>เพิ่มพนักงานใหม่</h2>
+            <form id="employeeForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="fullName">ชื่อ-นามสกุล</label>
+                        <input type="text" id="fullName" name="fullName" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="position">ตำแหน่งที่ต้องการ</label>
+                            <input type="text" id="position" name="position" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="expectedSalary">เงินเดือนที่ต้องการ</label>
+                            <input type="number" id="expectedSalary" name="expectedSalary" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="address">ที่อยู่ปัจจุบัน</label>
+                        <input type="text" id="address" name="address" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="phone">โทรศัพท์</label>
+                            <input type="tel" id="phone" name="phone" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">อีเมล</label>
+                            <input type="email" id="email" name="email" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="birthDate">วัน เดือน ปีเกิด</label>
+                            <input type="date" 
+                                   id="birthDate" 
+                                   name="birthDate" 
+                                   max="2006-01-01"
+                                   required>
+                        </div>
+                        <div class="form-group">
+                            <label for="nationality">สัญชาติ</label>
+                            <input type="text" id="nationality" name="nationality" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>เพศ</label>
+                        <div class="checkbox-group">
+                            <div class="checkbox-item">
+                                <input type="radio" id="male" name="gender" value="male" onchange="toggleMilitaryService()">
+                                <label for="male">ชาย</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="radio" id="female" name="gender" value="female" onchange="toggleMilitaryService()">
+                                <label for="female">หญิง</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group military-service" id="militaryService">
+                        <label>ภาระทางการทหาร (สำหรับเพศชาย)</label>
+                        <div class="checkbox-group">
+                            <div class="checkbox-item">
+                                <input type="radio" id="military1" name="military" value="exempt">
+                                <label for="military1">ได้รับการยกเว้น</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="radio" id="military2" name="military" value="reserve">
+                                <label for="military2">ปลดเป็นทหารกองหนุน</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="radio" id="military3" name="military" value="pending">
+                                <label for="military3">ยังไม่ได้รับการเกณฑ์ทหาร</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="education">ระดับการศึกษา</label>
+                        <select id="education" name="education" required>
+                            <option value="">เลือกระดับการศึกษา</option>
+                            <option value="high-school">มัธยมศึกษาปีที่ 6</option>
+                            <option value="vocational">ประกาศนียบัตรวิชาชีพ (ปวช.)</option>
+                            <option value="diploma">ประกาศนียบัตรวิชาชีพชั้นสูง (ปวส.)</option>
+                            <option value="bachelor">ปริญญาตรี</option>
+                            <option value="master">ปริญญาโท</option>
+                            <option value="phd">ปริญญาเอก</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn" id="submitButton">เพิ่มพนักงาน</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Remove password check and show content immediately
+        window.onload = function() {
+            document.getElementById('mainContent').style.display = 'block';
+        }
+
+        let currentEditId = null; // Track which employee is being edited
+
+        // Phone number validation
+        document.getElementById('phone').addEventListener('input', function(e) {
+            // Remove any non-digit characters
+            let value = e.target.value.replace(/\D/g, '');
+            // Limit to 10 digits
+            value = value.substring(0, 10);
+            e.target.value = value;
+        });
+
+        // Modal functions
+        function openEmployeeModal() {
+            currentEditId = null; // Reset edit mode
+            document.getElementById('employeeModal').classList.add('active');
+            document.getElementById('employeeForm').reset();
+            document.querySelector('.modal-content h2').textContent = 'เพิ่มพนักงานใหม่';
+            document.getElementById('submitButton').textContent = 'เพิ่มพนักงาน';
+        }
+
+        function closeEmployeeModal() {
+            document.getElementById('employeeModal').classList.remove('active');
+            document.getElementById('employeeForm').reset();
+            currentEditId = null;
+        }
+
+        // Edit employee function
+        function editEmployee(id, firstName, lastName, position, salary, address, phone, email, birthDate, nationality, gender, militaryStatus, educationLevel) {
+            currentEditId = id;
+            document.getElementById('employeeModal').classList.add('active');
+            document.querySelector('.modal-content h2').textContent = 'แก้ไขข้อมูลพนักงาน';
+            document.getElementById('submitButton').textContent = 'แก้ไขข้อมูลพนักงาน';
+
+            // Fill in the form with employee data
+            document.getElementById('fullName').value = `${firstName} ${lastName}`;
+            document.getElementById('position').value = position;
+            document.getElementById('expectedSalary').value = salary;
+            document.getElementById('address').value = address;
+            document.getElementById('phone').value = phone;
+            document.getElementById('email').value = email;
+            document.getElementById('birthDate').value = birthDate;
+            document.getElementById('nationality').value = nationality;
+            document.getElementById('education').value = educationLevel;
+
+            // Set gender
+            document.getElementById(gender).checked = true;
+            toggleMilitaryService();
+
+            // Set military status if applicable
+            if (gender === 'male' && militaryStatus) {
+                document.querySelector(`input[name="military"][value="${militaryStatus}"]`).checked = true;
+            }
+        }
+
+        // Get CSRF token from meta tag
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        // Form submission handler
+        document.getElementById('employeeForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            try {
+                // Split full name into first and last name
+                const fullName = document.getElementById('fullName').value.split(' ');
+                const firstName = fullName[0];
+                const lastName = fullName.slice(1).join(' ');
+
+                // Get military status
+                let militaryStatus = '';
+                if (document.getElementById('male').checked) {
+                    const militaryRadio = document.querySelector('input[name="military"]:checked');
+                    militaryStatus = militaryRadio ? militaryRadio.value : '';
+                }
+
+                const formData = {
+                    first_name: firstName,
+                    last_name: lastName,
+                    position: document.getElementById('position').value,
+                    salary: parseFloat(document.getElementById('expectedSalary').value),
+                    address: document.getElementById('address').value,
+                    phone: document.getElementById('phone').value,
+                    email: document.getElementById('email').value,
+                    birth_date: document.getElementById('birthDate').value,
+                    nationality: document.getElementById('nationality').value,
+                    gender: document.querySelector('input[name="gender"]:checked').value,
+                    military_status: militaryStatus,
+                    education_level: document.getElementById('education').value
+                };
+
+                // Validate phone number
+                if (formData.phone.length !== 10) {
+                    alert('กรุณากรอกเบอร์โทรศัพท์ให้ครบ 10 หลัก');
+                    return;
+                }
+
+                console.log('Sending form data:', formData); // Debug log
+
+                const url = currentEditId ? `/api/employees/${currentEditId}` : '/api/employees';
+                const method = currentEditId ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูลพนักงาน');
+                }
+
+                const result = await response.json();
+                console.log('Server response:', result); // Debug log
+
+                alert(currentEditId ? 'แก้ไขข้อมูลพนักงานเรียบร้อยแล้ว' : 'เพิ่มพนักงานเรียบร้อยแล้ว');
+                window.location.reload();
+            } catch (error) {
+                console.error('Error:', error);
+                alert(error.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูลพนักงาน');
+            }
+        });
+
+        // Delete employee
+        async function deleteEmployee(id) {
+            if (confirm('คุณแน่ใจหรือไม่ที่จะลบข้อมูลพนักงานคนนี้?')) {
+                try {
+                    const response = await fetch(`/api/employees/${id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRFToken': csrfToken
+                        }
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || 'เกิดข้อผิดพลาดในการลบข้อมูลพนักงาน');
+                    }
+
+                    const result = await response.json();
+                    alert('ลบข้อมูลพนักงานเรียบร้อยแล้ว');
+                    window.location.reload();
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert(error.message || 'เกิดข้อผิดพลาดในการลบข้อมูลพนักงาน');
+                }
+            }
+        }
+
+        function toggleMilitaryService() {
+            const militaryService = document.getElementById('militaryService');
+            const maleRadio = document.getElementById('male');
+            
+            if (maleRadio.checked) {
+                militaryService.classList.add('active');
+            } else {
+                militaryService.classList.remove('active');
+                // Clear any selected military service options when switching to female
+                document.querySelectorAll('input[name="military"]').forEach(radio => {
+                    radio.checked = false;
+                });
+            }
+        }
+    </script>
+</body>
+</html> 

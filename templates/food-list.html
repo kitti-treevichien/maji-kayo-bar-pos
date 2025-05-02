@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>จัดการรายการอาหาร - MAJI KAYO BAR</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: #1a1a1a;
+            color: white;
+            padding: 20px 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 0 20px 20px 20px;
+            border-bottom: 1px solid #333;
+            margin-bottom: 20px;
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-header p {
+            font-size: 0.9em;
+            color: #999;
+        }
+
+        .nav-section {
+            margin-bottom: 20px;
+        }
+
+        .nav-section h3 {
+            padding: 10px 20px;
+            color: #666;
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .nav-item {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            color: #fff;
+            text-decoration: none;
+            transition: background-color 0.3s;
+            cursor: pointer;
+        }
+
+        .nav-item:hover {
+            background-color: #333;
+        }
+
+        .nav-item.active {
+            background-color: #333;
+            border-left: 4px solid #ff4444;
+        }
+
+        .admin-only {
+            color: #ff4444;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            flex: 1;
+            padding: 20px;
+        }
+
+        .content-header {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .content-header h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .content-body {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1.1em;
+        }
+
+        .form-group input[type="number"] {
+            text-align: left;
+        }
+
+        .btn {
+            background: #1a1a1a;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .edit-btn, .delete-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .edit-btn {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .delete-btn {
+            background: #f44336;
+            color: white;
+        }
+
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 800px;
+            border-radius: 10px;
+            position: relative;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: black;
+        }
+
+        .modal-content .form-grid {
+            margin-top: 20px;
+            gap: 5px;
+        }
+
+        .modal-content .btn {
+            margin-top: 20px;
+        }
+
+        .food-list {
+            margin-top: 40px;
+        }
+
+        .food-list h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .form-group.name-field {
+            grid-column: 1 / -1;
+        }
+
+        .form-group.name-field input {
+            width: 100%;
+            font-size: 1.1em;
+            padding: 12px;
+        }
+
+        .form-group.price-field {
+            width: 100%;
+        }
+
+        .form-group.price-field input {
+            width: 100%;
+            text-align: left;
+            padding: 12px;
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>MAJI KAYO BAR</h1>
+        </div>
+
+        <div class="nav-section">
+            <h3>Admin Functions</h3>
+            <a href="{{ url_for('employee_register') }}" class="nav-item admin-only">
+                จัดการทะเบียนพนักงาน
+            </a>
+            <a href="{{ url_for('promotion_list') }}" class="nav-item admin-only">
+                จัดการรายการโปรโมชั่น
+            </a>
+            <a href="{{ url_for('performance_report') }}" class="nav-item admin-only">
+                จัดพิมพ์รายงานแสดงผลการดำเนินงาน
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <h3>Operations</h3>
+            <a href="{{ url_for('inventory') }}" class="nav-item">
+                จัดการคลังสินค้า
+            </a>
+            <a href="{{ url_for('food_list') }}" class="nav-item active">
+                จัดการรายการอาหาร
+            </a>
+            <a href="{{ url_for('table_register') }}" class="nav-item">
+                จัดการทะเบียนโต๊ะ
+            </a>
+            <a href="{{ url_for('receive_order') }}" class="nav-item">
+                รับออเดอร์
+            </a>
+            <a href="{{ url_for('pay_service') }}" class="nav-item">
+                ชำระค่าบริการ
+            </a>
+            <a href="{{ url_for('store_goods') }}" class="nav-item">
+                รับฝากสินค้า
+            </a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="content-header">
+            <h2>จัดการรายการอาหาร</h2>
+            <p>จัดการเมนูอาหารทั้งหมด</p>
+        </div>
+
+        <div class="content-body">
+            <button class="btn" onclick="openAddModal()">เพิ่มรายการอาหาร</button>
+            
+            <div class="food-list">
+                <h2>รายการอาหารทั้งหมด</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ชื่อเมนู</th>
+                            <th>ราคา</th>
+                            <th>การจัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="foodList">
+                        <!-- Food items will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="foodModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 id="modalTitle">เพิ่มรายการอาหาร</h2>
+            <form id="foodForm" onsubmit="handleSubmit(event)">
+                <input type="hidden" id="foodId">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="name">ชื่อเมนู</label>
+                        <input type="text" id="name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="price">ราคา</label>
+                        <input type="number" id="price" name="price" step="0.01" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn">บันทึก</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Load food items when page loads
+        document.addEventListener('DOMContentLoaded', loadFoodItems);
+
+        function loadFoodItems() {
+            fetch('/api/menu')
+                .then(response => response.json())
+                .then(items => {
+                    const tbody = document.getElementById('foodList');
+                    tbody.innerHTML = '';
+                    items.forEach(item => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${item.name}</td>
+                                <td>${item.price.toFixed(2)} บาท</td>
+                                <td class="actions">
+                                    <button class="edit-btn" onclick="editItem(${item.id})">แก้ไข</button>
+                                    <button class="delete-btn" onclick="deleteItem(${item.id})">ลบ</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = 'เพิ่มรายการอาหาร';
+            document.getElementById('foodForm').reset();
+            document.getElementById('foodId').value = '';
+            document.getElementById('foodModal').style.display = 'block';
+        }
+
+        function editItem(id) {
+            fetch(`/api/menu/${id}`)
+                .then(response => response.json())
+                .then(item => {
+                    document.getElementById('modalTitle').textContent = 'แก้ไขรายการอาหาร';
+                    document.getElementById('foodId').value = item.id;
+                    document.getElementById('name').value = item.name;
+                    document.getElementById('price').value = item.price;
+                    document.getElementById('foodModal').style.display = 'block';
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function deleteItem(id) {
+            if (confirm('คุณต้องการลบรายการนี้ใช่หรือไม่?')) {
+                fetch(`/api/menu/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    loadFoodItems();
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        }
+
+        function handleSubmit(event) {
+            event.preventDefault();
+            const formData = {
+                name: document.getElementById('name').value,
+                price: parseFloat(document.getElementById('price').value)
+            };
+
+            const id = document.getElementById('foodId').value;
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? `/api/menu/${id}` : '/api/menu';
+
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                closeModal();
+                loadFoodItems();
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function closeModal() {
+            document.getElementById('foodModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('foodModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html> 
