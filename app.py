@@ -46,9 +46,6 @@ def init_db():
         conn = get_db_connection()
         c = conn.cursor()
         
-        # Drop and recreate inventory table to ensure clean state
-        c.execute('DROP TABLE IF EXISTS inventory')
-        
         # Create inventory table
         c.execute('''
             CREATE TABLE inventory (
