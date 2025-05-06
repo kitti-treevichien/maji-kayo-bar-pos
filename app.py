@@ -29,7 +29,7 @@ def check_and_install_requirements():
 check_and_install_requirements()
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your-secret-key-here'  # Change this to a secure secret key
+app.config['SECRET_KEY'] = 'secret-key'
 csrf = CSRFProtect(app)
 
 def get_db_connection():
